@@ -9,7 +9,7 @@
 static const char rwx[] = "rwx";
 static const char sst[] = "sst";
 
-char* get_permstr(char permstr[11], int st_mode) {
+char* minils_get_permstr(char permstr[11], int st_mode) {
     strcpy(permstr, "----------");
 
     // set file type
