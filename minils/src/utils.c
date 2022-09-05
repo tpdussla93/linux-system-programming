@@ -5,6 +5,7 @@
 #include <unistd.h>
 
 #include <string.h>
+#include <stdio.h>
 
 static const char rwx[] = "rwx";
 static const char sst[] = "sst";
@@ -57,4 +58,15 @@ char* minils_get_permstr(char permstr[11], int st_mode) {
     }
 
     return permstr;
+}
+
+int minils_get_devnum_str(char* devnum_str, size_t buf_size, int devnum) {
+    return snprintf(devnum_str, buf_size, "%d, %d", (devnum >> 8) & 0xff,
+                    devnum & 0xff);
+}
+
+size_t minils_get_timestr(char* time_str, size_t buf_size,
+                          time_t time_since_epoch) {
+    return strftime(time_str, buf_size, "%b %2e %H:%M",
+                    localtime(&time_since_epoch));
 }

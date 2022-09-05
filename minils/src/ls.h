@@ -3,4 +3,6 @@
 
 #include "src/argparse.h"
 
+void minils_ls(char* paths[], int num_paths, minils_opt_flag_t opt_flag);
+
 #endif  // MINILS_SRC_LS_H_

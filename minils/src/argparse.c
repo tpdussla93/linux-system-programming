@@ -4,7 +4,7 @@
 
 #include <stdio.h>
 
-int minils_parse_args(int argc, char* const* argv, opt_flag_t* opt_flag,
+int minils_parse_args(int argc, char* const* argv, minils_opt_flag_t* opt_flag,
                       int* posarg_idices, int max_pos_args) {
     int ch;
     int pos_arg_idx = 0;
