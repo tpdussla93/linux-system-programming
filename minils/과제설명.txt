@@ -1,0 +1,98 @@
+1. 빌드 방법
+
+    make
+
+2. 실행 방법
+
+    out/minils [options] <paths...>
+
+3. 테스트 환경
+    Linux DESKTOP-D5K11KU 5.15.57.1-microsoft-standard-WSL2 #1 SMP Wed Jul 27 02:20:31 UTC 2022 x86_64 x86_64 x86_64 GNU/Linux
+
+    Distributor ID: Ubuntu
+    Description:    Ubuntu 22.04.1 LTS
+    Release:        22.04
+    Codename:       jammy
+
+    gcc (Ubuntu 11.2.0-19ubuntu1) 11.2.0
+
+    GNU Make 4.3
+
+4. 구현 사항
+    -. -a, -l, -R, -i 옵션을 구현하였습니다.
+    -. 옵션 구현시 getopt 함수를 사용하였으며 argparse.h 의 minils_parse_args 함수에서 위치인자를 함께 파싱하는 함수를 만들어서 사용하였습니다.
+    -. ls.c 내의 ls_dir 함수에서 -R 옵션이 들어온 경우 해당 함수를 재귀호출 하여 출력하도록 구현하였습니다.
+    -. utils.h 의 minils_get_permstr 함수에서 stat_buf.st_mode에 따른 permission 문자열을 구하도록 구현한 함수를 사용하였습니다. 특수퍼미션(s, s, t) 도 정상적으로 출력되도록 구현하였습니다.
+    -. 시간출력은 C 표준함수 strftime 과 localtime 을 사용하여 출력되도록 구현하였습니다.
+    -. -l 옵션 사용 시 각 컬럼별로 정렬이 되도록 구현하였습니다.(ls.c 의 print_path 함수에서 정렬 정보를 저장한 cui_align_t 구조체 포인터를 전달받아 정렬하였으며, 해당 정보는 출력전에 이터레이션을 통해 최대 길이를 구하도록 하였습니다.)
+    -. 심볼릭 링크 파일의 경우 linkname -> targetname 출력되도록 구현을 시도하였으나 버그가 있어 제대로 출력되지 않고 있습니다.
+    -. 디바이스 특수 파일의 경우 파일 사이즈 대신 major, minor device number가 출력되도록 구현하였습니다.
+    -. 인자로 디렉터리를 주었을 때 해당 디렉터리 내용을 출력하며 여러 인자를 섞어서 넣어도 출력되도록 구현하였습니다.
+    -. -l 인자로 디렉터리를 출력 시 total 에 출력되는 dentry의 사용 블록 크기를 출력하도록 하였습니다.
+    -. argparse.c, ls.c, minils.c, utils.c 파일들에 구현을 분리하였으며 이를 각각 오브젝트파일로 생성해 링킹하여 실행파일을 만들도록 Makefile을 구성하였으며, 오브젝트파일은 obj 디렉터리에, 최종 실행파일은 out 디렉터리에 생성되도록 하였습니다.
+    -. ls 처럼 목록 출력 시 정렬되어 출력하는 부분은 구현하지 않았습니다.
+
+5. 느낀점
+    C++, Python 과 같은 고수준 언어로만 프로그래밍을 하다가 오랫만에 C 코딩을 하려니까 생각할 것도 많고 생각보다 구현하는데 더 오래걸린 것 같습니다.
+    POSIX API가 C++ API로도 지원되면 좋겠다는 생각을 했고, 없다면 직접 래핑해서 만들어 보는 것도 재밌겠다는 생각이 들었습니다.
+    Makefile 도 다른 빌드 시스템처럼 출력 결과물을 다른 디렉터리에 생성하도록 주려고 하니까 강의에서 보았던 suffix 룰을 사용하지 못해 직접 작성해야 하는 번거로움이 있어 더 나은 방법이 없나 궁금함이 생겼습니다.
+
+6. 실행 결과
+    kimsy@DESKTOP-D5K11KU:~/repos/linux-system-programming/minils$ out/minils -i
+    32823 src  9548 obj  10499 out  40764 과제설명.txt  32909 Makefile  32737 test_dir  
+    kimsy@DESKTOP-D5K11KU:~/repos/linux-system-programming/minils$ out/minils -l
+    total: 24
+    drwxr-xr-x 2 kimsy kimsy 4096 Sep  5 12:41 src
+    drwxr-xr-x 2 kimsy kimsy 4096 Sep  5 16:15 obj
+    drwxr-xr-x 2 kimsy kimsy 4096 Sep  5 16:15 out
+    -rw-r--r-- 1 kimsy kimsy  366 Sep  5 16:18 과제설명.txt
+    -rw-r--r-- 1 kimsy kimsy  739 Sep  5 12:42 Makefile
+    drwxr-xr-x 4 kimsy kimsy 4096 Sep  5 10:25 test_dir
+    kimsy@DESKTOP-D5K11KU:~/repos/linux-system-programming/minils$ out/minils -R
+    .:
+    src  obj  out  과제설명.txt  Makefile  test_dir  
+
+    ./src:
+    ls.c  utils.h  argparse.h  utils.c  ls.h  argparse.c  minils.c  
+
+    ./obj:
+    utils.o  ls.o  argparse.o  minils.o  
+
+    ./out:
+    minils  
+
+    ./test_dir:
+    test2.txt  subdir2  test.txt  subdir1  
+
+    ./test_dir/subdir2:
+    test1.txt  
+
+    ./test_dir/subdir1:
+    test1.txt  test.txt  
+
+    kimsy@DESKTOP-D5K11KU:~/repos/linux-system-programming/minils$ out/minils -a
+    src  .gitignore  obj  out  과제설명.txt  .clang-format  .vscode  Makefile  ..  .  test_dir  
+    kimsy@DESKTOP-D5K11KU:~/repos/linux-system-programming/minils$ out/minils -la
+    total: 44
+    drwxr-xr-x 2 kimsy kimsy 4096 Sep  5 12:41 src
+    -rw-r--r-- 1 kimsy kimsy   26 Sep  5 10:25 .gitignore
+    drwxr-xr-x 2 kimsy kimsy 4096 Sep  5 16:15 obj
+    drwxr-xr-x 2 kimsy kimsy 4096 Sep  5 16:15 out
+    -rw-r--r-- 1 kimsy kimsy  366 Sep  5 16:18 과제설명.txt
+    -rw-r--r-- 1 kimsy kimsy  189 Sep  5 08:00 .clang-format
+    drwxr-xr-x 2 kimsy kimsy 4096 Sep  5 08:52 .vscode
+    -rw-r--r-- 1 kimsy kimsy  739 Sep  5 12:42 Makefile
+    drwxr-xr-x 9 kimsy kimsy 4096 Sep  5 12:42 ..
+    drwxr-xr-x 7 kimsy kimsy 4096 Sep  5 16:17 .
+    drwxr-xr-x 4 kimsy kimsy 4096 Sep  5 10:25 test_dir
+    kimsy@DESKTOP-D5K11KU:~/repos/linux-system-programming/minils$ out/minils  -l test_dir/subdir1
+    total: 4
+    -rw-r--r-- 1 kimsy kimsy   27 Sep  5 10:26 test1.txt
+    lrwxrwxrwx 1 kimsy kimsy    8 Sep  5 10:37 test.txt -> ?
+    kimsy@DESKTOP-D5K11KU:~/repos/linux-system-programming/minils$ ls -l test_dir/subdir1
+    total 4
+    -rw-r--r-- 1 kimsy kimsy 27 Sep  5 10:26 test1.txt
+    lrwxrwxrwx 1 kimsy kimsy  8 Sep  5 10:37 test.txt -> test.txt
+    kimsy@DESKTOP-D5K11KU:~/repos/linux-system-programming/minils$ out/minils /dev/tty -l /dev/sda 
+    crw-rw-rw- 1 root root 5, 0 Sep  5 12:42 /dev/tty
+    brw------- 1 root root 8, 0 Sep  5 07:23 /dev/sda
