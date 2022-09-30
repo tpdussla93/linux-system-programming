@@ -25,8 +25,8 @@ typedef struct cui_align {
     int max_time_len;
 } cui_align_t;
 
-static void print_path(char const* path, struct stat* stat_buf,
-                       minils_opt_flag_t opt_flag,
+static void print_path(char const* dirname, char const* path,
+                       struct stat* stat_buf, minils_opt_flag_t opt_flag,
                        const cui_align_t* cui_align) {
     if (path == NULL) {
         return;
@@ -87,6 +87,7 @@ static void print_path(char const* path, struct stat* stat_buf,
                 buf[len] = 0;
                 printf("%s -> %s\n", path, buf);
             } else {
+                perror("readlink fail: ");
                 printf("%s -> ?\n", path);
             }
         } else {
@@ -283,7 +284,7 @@ static void ls_dir(char const* dir, minils_opt_flag_t opt_flag) {
             perror(buf);
             continue;
         }
-        print_path(p->d_name, &stat_buf, opt_flag, &cui_align);
+        print_path(dir, p->d_name, &stat_buf, opt_flag, &cui_align);
     }
     if (!MINILS_OPT_IS_L_SET(opt_flag)) {
         printf("\n");
@@ -329,7 +330,7 @@ void minils_ls(char* paths[], int num_paths, minils_opt_flag_t opt_flag) {
             ls_dir(paths[0], opt_flag);
         } else {
             memset(&cui_align, 0, sizeof cui_align);
-            print_path(paths[0], &stat_buf, opt_flag, &cui_align);
+            print_path(NULL, paths[0], &stat_buf, opt_flag, &cui_align);
             if (!MINILS_OPT_IS_L_SET(opt_flag)) {
                 printf("\n");
             }
@@ -339,15 +340,23 @@ void minils_ls(char* paths[], int num_paths, minils_opt_flag_t opt_flag) {
             find_cui_align(paths, num_paths, &cui_align);
         }
 
+        int non_dir_printed = 0;
         for (int i = 0; i < num_paths; ++i) {
             if (lstat(paths[i], &stat_buf)) {
                 perror(paths[i]);
                 continue;
             }
-            print_path(paths[i], &stat_buf, opt_flag, &cui_align);
+            if (!S_ISDIR(stat_buf.st_mode)) {
+                non_dir_printed = 1;
+                print_path(NULL, paths[i], &stat_buf, opt_flag, &cui_align);
+            }
         }
-        if (!MINILS_OPT_IS_L_SET(opt_flag)) {
-            printf("\n");
+        if (non_dir_printed) {
+            if (!MINILS_OPT_IS_L_SET(opt_flag)) {
+                printf("\n\n");
+            } else {
+                printf("\n");
+            }
         }
 
         // list dir
@@ -359,6 +368,7 @@ void minils_ls(char* paths[], int num_paths, minils_opt_flag_t opt_flag) {
             if (S_ISDIR(stat_buf.st_mode)) {
                 printf("%s:\n", paths[i]);
                 ls_dir(paths[i], opt_flag);
+                printf("\n");
             }
         }
     } else {
