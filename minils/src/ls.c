@@ -82,8 +82,22 @@ static void print_path(char const* dirname, char const* path,
 
         // print path
         if (S_ISLNK(stat_buf->st_mode)) {
+            char full_path[FILENAME_MAX + 1];
+
+            if (dirname) {
+                int ret =
+                    snprintf(full_path, FILENAME_MAX, "%s/%s", dirname, path);
+                if (ret < 0) {
+                    perror("snprintf failed: ");
+                    strncpy(full_path, path, FILENAME_MAX);
+                }
+                full_path[ret] = 0;
+            } else {
+                strncpy(full_path, path, FILENAME_MAX);
+            }
+
             ssize_t len;
-            if ((len = readlink(path, buf, FILENAME_MAX)) != -1) {
+            if ((len = readlink(full_path, buf, FILENAME_MAX)) != -1) {
                 buf[len] = 0;
                 printf("%s -> %s\n", path, buf);
             } else {
